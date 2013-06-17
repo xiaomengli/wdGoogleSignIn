@@ -9,13 +9,9 @@ var globalGoogleAPIs = (function() {
     window.googleAPIOnload = googleAPIOnload;
 
     return {
-        loadPromise : function() {
-            return loadDefer.promise();
-        },
+        loadPromise : loadDefer.promise(),
 
-        signCallbackPromise : function() {
-            return signCallbackDefer.promise();
-        },
+        signCallbackPromise : signCallbackDefer.promise(),
 
         signInCallback : function(authData) {
             signCallbackDefer.resolve(authData);
@@ -231,11 +227,11 @@ var globalGoogleAPIs = (function() {
                 if (!wdGoogleSignInObj) {
                     wdGoogleSignInObj = new wdGoogleSignIn();
 
-                    globalGoogleAPIs.loadPromise().done(function() {
+                    globalGoogleAPIs.loadPromise.done(function() {
                         wdGoogleSignInObj.render();
                     });
 
-                    globalGoogleAPIs.signCallbackPromise().done(function(authData) {
+                    globalGoogleAPIs.signCallbackPromise.done(function(authData) {
                         wdGoogleSignInObj.signInCallback(authData);
                     });
                 }
@@ -245,3 +241,4 @@ var globalGoogleAPIs = (function() {
 
     window.wdGoogleSignInFactory = factory;
 })();
+
