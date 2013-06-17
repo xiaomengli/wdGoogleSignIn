@@ -1,10 +1,25 @@
-function googleAPIOnload () {
-    wdGoogleSignInFactory.getInstance().render();
+var globalGoogleAPIs = {
+
+    loadDefer :  $.Deferred(),
+
+    signCallbackDefer : $.Deferred(),
+    
+    signInCallback : function(authData) {
+        globalGoogleAPIs.signCallbackDefer.resolve(authData);
+
+        return globalGoogleAPIs.signCallbackDefer.promise();    
+    }
+};
+
+
+
+function googleAPIOnload() {
+    globalGoogleAPIs.loadDefer.resolve('loaded');
+
+    return globalGoogleAPIs.loadDefer.promise();
 }
 
-function googleSignInCallback (authData) {
-    wdGoogleSignInFactory.getInstance().signInCallback(authData);
-}
+
 (function() {
     function wdGoogleSignIn() {
         var readyDefer = $.Deferred();
@@ -36,7 +51,7 @@ function googleSignInCallback (authData) {
 
                 _.each(signinBtns, function(item) {
                     gapi.signin.render(item, {
-                      'callback': 'googleSignInCallback',
+                      'callback': globalGoogleAPIs.signInCallback,
                       'clientid': '592459906195-7sjc6v1cg6kf46vdhdvn8g2pvjbdn5ae.apps.googleusercontent.com',
                       // 'cookiepolicy': 'http://snappea.com',
                       'cookiepolicy': 'http://localhost',
@@ -72,8 +87,6 @@ function googleSignInCallback (authData) {
                     $.ajax({
                         type: 'GET',
                         url: revokeUrl,
-                        async: false,
-                        contentType: 'application/json',
                         dataType: 'jsonp',
                         success: function() {
                             setAuthData({});
@@ -91,7 +104,7 @@ function googleSignInCallback (authData) {
                                 defer.reject(e);                    
                             }
 
-                            signOutRetryTimes --;
+                            signOutRetryTimes = signOutRetryTimes - 1;
                         }
                     });  
                 }
@@ -116,8 +129,6 @@ function googleSignInCallback (authData) {
                     $.ajax({
                         type: 'GET',
                         url: url,
-                        async: false,
-                        contentType: 'application/json',
                         dataType: 'jsonp',
                         success: function(data) {
                             defer.resolve(data);
@@ -131,7 +142,7 @@ function googleSignInCallback (authData) {
                                 defer.reject(e);
                             }
 
-                            getDevicesRetryTimes --;
+                            getDevicesRetryTimes = getDevicesRetryTimes - 1;
                         }
                     });   
                 }
@@ -150,6 +161,7 @@ function googleSignInCallback (authData) {
             },
 
             loopLinkDevices : function() {
+                var self = this;
                 var isConnectDevice = false;
                 var loopGetDevicesTimer = null;
                 var getDevices = function() {
@@ -178,14 +190,15 @@ function googleSignInCallback (authData) {
                             clearInterval(loopGetDevicesTimer);
                         }
                         loopGetDevicesTimer = setInterval(function() {
-                            getDevices();
+                            getDevices.call(self);
                         }, 10000);
 
                     }).fail(function(errorInfo) {
+                        console.log('get devices error');
                         getDevices();
                     });   
                 }
-                getDevices.call(this);
+                getDevices.call(self);
             },
 
             stopLoopLinkDevices : function() {
@@ -214,6 +227,14 @@ function googleSignInCallback (authData) {
             getInstance : function() {
                 if (!wdGoogleSignInObj) {
                     wdGoogleSignInObj = new wdGoogleSignIn();
+
+                    globalGoogleAPIs.loadDefer.done(function() {
+                        wdGoogleSignInObj.render();
+                    });
+
+                    globalGoogleAPIs.signCallbackDefer.done(function(authData) {
+                        wdGoogleSignInObj.signInCallback(authData);
+                    });
                 }
                 return wdGoogleSignInObj;
             }
