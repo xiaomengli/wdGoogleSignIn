@@ -1,24 +1,27 @@
-var globalGoogleAPIs = {
+var globalGoogleAPIs = (function() {
+    var loadDefer = $.Deferred();
+    var signCallbackDefer = $.Deferred();
 
-    loadDefer :  $.Deferred(),
-
-    signCallbackDefer : $.Deferred(),
-    
-    signInCallback : function(authData) {
-        globalGoogleAPIs.signCallbackDefer.resolve(authData);
-
-        return globalGoogleAPIs.signCallbackDefer.promise();    
+    var googleAPIOnload = function() {
+        loadDefer.resolve('loaded');
     }
-};
 
+    window.googleAPIOnload = googleAPIOnload;
 
+    return {
+        loadPromise : function() {
+            return loadDefer.promise();
+        },
 
-function googleAPIOnload() {
-    globalGoogleAPIs.loadDefer.resolve('loaded');
+        signCallbackPromise : function() {
+            return signCallbackDefer.promise();
+        },
 
-    return globalGoogleAPIs.loadDefer.promise();
-}
-
+        signInCallback : function(authData) {
+            signCallbackDefer.resolve(authData);
+        }
+    }
+})();
 
 (function() {
     function wdGoogleSignIn() {
@@ -228,11 +231,11 @@ function googleAPIOnload() {
                 if (!wdGoogleSignInObj) {
                     wdGoogleSignInObj = new wdGoogleSignIn();
 
-                    globalGoogleAPIs.loadDefer.done(function() {
+                    globalGoogleAPIs.loadPromise().done(function() {
                         wdGoogleSignInObj.render();
                     });
 
-                    globalGoogleAPIs.signCallbackDefer.done(function(authData) {
+                    globalGoogleAPIs.signCallbackPromise().done(function(authData) {
                         wdGoogleSignInObj.signInCallback(authData);
                     });
                 }
@@ -242,4 +245,3 @@ function googleAPIOnload() {
 
     window.wdGoogleSignInFactory = factory;
 })();
-
